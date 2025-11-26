@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rumah Sakit Laplace</title>
+
+<style>
+  body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 0; padding: 0; }
+  header { background: #c20000; color: white; padding: 15px; text-align: center; }
+  .container { width: 360px; margin: 30px auto; background: #fff; padding: 20px; border-radius: 10px; }
+  input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; }
+  textarea { resize: vertical; }
+  button { background: #c20000; border: none; color: white; cursor: pointer; border-radius: 5px; font-weight: bold; }
+  button:hover { background: #900000; }
+  .logout-btn { background: gray; }
+  .hidden { display: none; }
+  .link { text-align: center; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { border: 1px solid #ccc; padding: 5px; text-align: center; font-size: 13px; }
+  th { background: #c20000; color: #fff; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>Rumah Sakit Laplace</h2>
+</header>
+
+
+<!-- LOGIN PAGE -->
+<div class="container" id="loginPage">
+  <h3>Login</h3>
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button onclick="login()">Masuk</button>
+  <p class="link">Belum punya akun? <a href="#" onclick="showRegister()">Daftar</a></p>
+</div>
+
+
+<!-- REGISTER PAGE -->
+<div class="container hidden" id="registerPage">
+  <h3>Registrasi Akun</h3>
+  <input type="text" id="regUsername" placeholder="Buat Username" required>
+  <input type="password" id="regPassword" placeholder="Buat Password" required>
+  <button onclick="register()">Daftar</button>
+  <p class="link">Sudah punya akun? <a href="#" onclick="showLogin()">Login</a></p>
+</div>
+
+
+<!-- HOME PAGE (PASIEN) -->
+<div class="container hidden" id="homePage">
+  <h3>Pendaftaran Poli</h3>
+
+  <input type="text" id="nama" placeholder="Nama Pasien" required>
+  <input type="text" id="nik" placeholder="NIK" required>
+  <input type="text" id="telepon" placeholder="No Telepon" required>
+  <textarea id="alamat" placeholder="Alamat" required></textarea>
+
+  <select id="poli" required>
+    <option value="">-- Pilih Poli --</option>
+    <option value="Poli Umum">Poli Umum</option>
+    <option value="Poli Gigi">Poli Gigi</option>
+    <option value="Poli KIA">Poli KIA</option>
+    <option value="Poli Lansia">Poli Lansia</option>
+  </select>
+
+  <select id="dokter" required>
+    <option value="">-- Pilih Dokter --</option>
+    <option value="Alucard">Alucard</option>
+    <option value="Lancelot">Lancelot</option>
+    <option value="Hilda">Hilda</option>
+    <option value="Lunox">Lunox</option>
+    <option value="Floryn">Floryn</option>
+    <option value="Angela">Angela</option>
+  </select>
+
+  <textarea id="keluhan" placeholder="Keluhan Pasien" required></textarea>
+
+  <button onclick="daftarPoli()">Daftar</button>
+
+  <hr>
+  <h4>Riwayat Pendaftaran</h4>
+  <table id="riwayatTable"></table>
+
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+
+<!-- ADMIN PAGE -->
+<div class="container hidden" id="adminPage">
+  <h3>Halaman Admin</h3>
+  <p><b>Data Seluruh Pasien:</b></p>
+
+  <table id="adminTable"></table>
+
+  <button onclick="hapusSemua()" style="background:black;">Hapus Semua Data</button>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+
+<script>
+// ========== Navigasi ==========
+function showLogin() {
+  loginPage.classList.remove("hidden");
+  registerPage.classList.add("hidden");
+  homePage.classList.add("hidden");
+  adminPage.classList.add("hidden");
+}
+function showRegister() {
+  loginPage.classList.add("hidden");
+  registerPage.classList.remove("hidden");
+  homePage.classList.add("hidden");
+  adminPage.classList.add("hidden");
+}
+function showHome() {
+  loginPage.classList.add("hidden");
+  registerPage.classList.add("hidden");
+  homePage.classList.remove("hidden");
+  adminPage.classList.add("hidden");
+}
+function showAdmin() {
+  loginPage.classList.add("hidden");
+  registerPage.classList.add("hidden");
+  homePage.classList.add("hidden");
+  adminPage.classList.remove("hidden");
+}
+
+
+// ========== Register User ==========
+function register() {
+  localStorage.setItem("username", regUsername.value);
+  localStorage.setItem("password", regPassword.value);
+  alert("Registrasi Berhasil!");
+  showLogin();
+}
+
+
+// ========== Login User atau Admin ==========
+function login() {
+  let u = username.value;
+  let p = password.value;
+
+  if (u === "admin" && p === "admin123") {
+    alert("Login Admin Berhasil");
+    loadAdminTable();
+    showAdmin();
+    return;
+  }
+
+  if (u === localStorage.getItem("username") &&
+      p === localStorage.getItem("password")) {
+    alert("Login Pasien Berhasil");
+    loadRiwayat();
+    showHome();
+  } else {
+    alert("Username atau password salah!");
+  }
+}
+
+
+// ========== Pasien Daftar Poli ==========
+function daftarPoli() {
+  if (!nama.value || !nik.value || !telepon.value || !alamat.value || 
+      !poli.value || !dokter.value || !keluhan.value) {
+    return alert("Harap isi semua data!");
+  }
+
+  let data = JSON.parse(localStorage.getItem("riwayat") || "[]");
+  data.push({
+    nama: nama.value,
+    nik: nik.value,
+    telepon: telepon.value,
+    alamat: alamat.value,
+    poli: poli.value,
+    dokter: dokter.value,
+    keluhan: keluhan.value
+  });
+  localStorage.setItem("riwayat", JSON.stringify(data));
+
+  alert("Pendaftaran Berhasil!");
+  loadRiwayat();
+}
+
+
+// ========== Load tabel pasien ==========
+function loadRiwayat() {
+  let data = JSON.parse(localStorage.getItem("riwayat") || "[]");
+  riwayatTable.innerHTML = `
+    <tr><th>No</th><th>Nama</th><th>NIK</th><th>Poli</th><th>Dokter</th></tr>`;
+  data.forEach((item, i) => {
+    riwayatTable.innerHTML += `
+      <tr>
+      <td>${i+1}</td><td>${item.nama}</td><td>${item.nik}</td><td>${item.poli}</td><td>${item.dokter}</td>
+      </tr>`;
+  });
+}
+
+
+// ========== Load tabel admin ==========
+function loadAdminTable() {
+  let data = JSON.parse(localStorage.getItem("riwayat") || "[]");
+  adminTable.innerHTML = `
+    <tr>
+      <th>No</th><th>Nama</th><th>NIK</th><th>Telepon</th><th>Alamat</th><th>Poli</th><th>Dokter</th><th>Keluhan</th>
+    </tr>`;
+  data.forEach((item, i) => {
+    adminTable.innerHTML += `
+      <tr>
+      <td>${i+1}</td><td>${item.nama}</td><td>${item.nik}</td>
+      <td>${item.telepon}</td><td>${item.alamat}</td>
+      <td>${item.poli}</td><td>${item.dokter}</td><td>${item.keluhan}</td>
+      </tr>`;
+  });
+}
+
+
+// ========== Admin Hapus Data ==========
+function hapusSemua() {
+  if (confirm("Hapus semua data pendaftaran?")) {
+    localStorage.removeItem("riwayat");
+    loadAdminTable();
+  }
+}
+
+
+// ========== Logout ==========
+function logout() {
+  showLogin();
+  alert("Anda telah logout!");
+}
+</script>
+
+</body>
+</html>
